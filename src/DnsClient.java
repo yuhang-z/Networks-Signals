@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.*;
 import java.util.Arrays;
+import java.util.Random;
 
 public class DnsClient {
     // timeout (optional) gives how long to wait, in seconds, before retransmitting an unanswered query. Default value: 5.
@@ -115,41 +116,69 @@ public class DnsClient {
             String name = args[1];
             String socketData = "";
 
+            Random r = new Random();
+            for (int a=0; a<4; a++) {
+                int ID = r.nextInt(16);
+                socketData = socketData + Integer.toHexString(ID);  // add the ID (random)
+            }
+
+
+            socketData = socketData + "01000001000000000000";
+
 
             server = server.substring(1);   // remove @
-            String[] serverList = server.split(".");
+            String[] serverList = server.split("[.]");
+
             if(serverList.length != 4) {
                 throw new IllegalArgumentException("ERROR \t Incorrect input: Both server and name have to be valid!");
             }
 
-            String[] nameList = name.split(".");
+            String[] nameList = name.split("[.]");
 
             for (String partName: nameList) {
                 int partNameLength = partName.length();
                 if (partNameLength <8) {
-                    socketData = socketData + "0" + Integer.toOctalString(partNameLength) + " ";
+                    socketData = socketData + "0" + Integer.toHexString(partNameLength);
                 }
                 else {
-                    socketData = socketData + Integer.toOctalString(partNameLength) + " ";
+                    socketData = socketData + Integer.toHexString(partNameLength);
                 }
 
                 char[] partNameArr = partName.toCharArray();
                 for (char ch: partNameArr) {
-                    socketData = socketData + Integer.toOctalString((int)ch) + " ";
+                    socketData = socketData + Integer.toHexString((int)ch);
                 }
 
-                System.out.println(socketData);
+            }
+            socketData = socketData + "00";     // add "00" to indicate end
+
+            // indicate which flag I'm using
+            switch (flag) {
+                case 1:
+                    socketData = socketData + "0001";
+                    break;
+                case 2:
+                    socketData = socketData + "0002";
+                    break;
+                case 3:
+                    socketData = socketData + "0003";
+                    break;
+                default:
+                    break;
             }
 
+            // QCLASS
+            socketData = socketData + "0001";
 
+            socketData = socketData.replaceAll("..", "$0 ").trim();
+            System.out.println(socketData);
 
-
-
-            //TODO: send query
         } catch (Exception e) {   //TODO: is it exception? More specific
             throw new IllegalArgumentException("ERROR \t Incorrect input: Both server and name have to be valid!");
         }
 
+
+        //TODO: send query, socketdata is the input
 
         //TODO: output
 
