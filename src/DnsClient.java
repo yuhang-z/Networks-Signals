@@ -19,7 +19,8 @@ public class DnsClient {
     // 3: NS (name server)
     private static int flag = 1;
 
-    public static void main(String[] args) {
+    public static void main(String[] args){
+
         if(args.length < 2) {
             throw new IllegalArgumentException("ERROR \t Incorrect input: You must input both server and name!");
         }
@@ -179,8 +180,21 @@ public class DnsClient {
 
 
         //TODO: send query, socketdata is the input
+        DatagramSocket clientSocket = new DatagramSocket();
+      
+        
+        //Send datagram to server
+        clientSocket.send(socketData);
+        
+        
 
         //TODO: output
+        //Read datagram from server
+        clientSocket.receive(receivePacket);
+        String modifiedSentence =
+                new String(receivePacket.getData());
+        System.out.println("FROM SERVER:" + modifiedSentence);
+        clientSocket.close();
 
     }
 }
