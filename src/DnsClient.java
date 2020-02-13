@@ -19,7 +19,7 @@ public class DnsClient {
     // 3: NS (name server)
     private static int flag = 1;
 
-    public static void main(String[] args){
+    public static void main(String[] args) throws IOException {
 
         if(args.length < 2) {
             throw new IllegalArgumentException("ERROR \t Incorrect input: You must input both server and name!");
@@ -112,33 +112,33 @@ public class DnsClient {
         }
 
 
+        String socketData = "";
+        String server = args[0];
+        String name = args[1];
+
+        Random r = new Random();
+        for (int a=0; a<4; a++) {
+            int ID = r.nextInt(16);
+            socketData = socketData + Integer.toHexString(ID);  // add the ID (random)
+        }
+
+
+        socketData = socketData + "01000001000000000000";
+
+
+        server = server.substring(1);   // remove @
+        String[] serverList = server.split("[.]");
+
+        if(serverList.length != 4) {
+            throw new IllegalArgumentException("ERROR \t Incorrect input: Server has to be valid!");
+        }
+        System.out.println("server: " + server);
+        String[] nameList = name.split("[.]");
+
         try{
-            String server = args[0];
-            String name = args[1];
-            String socketData = "";
-
-            Random r = new Random();
-            for (int a=0; a<4; a++) {
-                int ID = r.nextInt(16);
-                socketData = socketData + Integer.toHexString(ID);  // add the ID (random)
-            }
-
-
-            socketData = socketData + "01000001000000000000";
-
-
-            server = server.substring(1);   // remove @
-            String[] serverList = server.split("[.]");
-
-            if(serverList.length != 4) {
-                throw new IllegalArgumentException("ERROR \t Incorrect input: Both server and name have to be valid!");
-            }
-
-            String[] nameList = name.split("[.]");
-
             for (String partName: nameList) {
                 int partNameLength = partName.length();
-                if (partNameLength <8) {
+                if (partNameLength < 8) {
                     socketData = socketData + "0" + Integer.toHexString(partNameLength);
                 }
                 else {
@@ -151,49 +151,123 @@ public class DnsClient {
                 }
 
             }
-            socketData = socketData + "00";     // add "00" to indicate end
 
-            // indicate which flag I'm using
-            switch (flag) {
-                case 1:
-                    socketData = socketData + "0001";
-                    break;
-                case 2:
-                    socketData = socketData + "0002";
-                    break;
-                case 3:
-                    socketData = socketData + "0003";
-                    break;
-                default:
-                    break;
-            }
-
-            // QCLASS
-            socketData = socketData + "0001";
-
-            socketData = socketData.replaceAll("..", "$0 ").trim();
-            System.out.println(socketData);
 
         } catch (Exception e) {   //TODO: is it exception? More specific
             throw new IllegalArgumentException("ERROR \t Incorrect input: Both server and name have to be valid!");
         }
 
+        socketData = socketData + "00";     // add "00" to indicate end
+
+        // indicate which flag I'm using
+        switch (flag) {
+            case 1:
+                socketData = socketData + "0001";
+                break;
+            case 2:
+                socketData = socketData + "0002";
+                break;
+            case 3:
+                socketData = socketData + "0003";
+                break;
+            default:
+                break;
+        }
+
+        // QCLASS
+        socketData = socketData + "0001";
+
+        socketData = socketData.replaceAll("..", "$0 ").trim();
+//        System.out.println(socketData);
+
+        // convert socketData to byte array
+        String[] socketDataList = socketData.split(" ");
+        int z=0;
+        byte[] bsocketData = new byte[socketDataList.length];
+        for(String str: socketDataList) {
+            int a = Character.digit(str.charAt(0), 16);
+            int b = Character.digit(str.charAt(1), 16);
+            bsocketData[z++] = (byte) ((a << 4) + b);
+        }
+
+
+//        for (int i =0; i< bsocketData.length; i++) {
+//            System.out.print("0x" + String.format("%x", bsocketData[i]) + " " );
+//        }
 
         //TODO: send query, socketdata is the input
+        System.out.println("1-------------------------");
+        InetAddress ipAddress = InetAddress.getByName(server);
         DatagramSocket clientSocket = new DatagramSocket();
-      
-        
+
+        DatagramPacket sendPacket = new DatagramPacket(bsocketData, bsocketData.length, ipAddress, port);
         //Send datagram to server
-        clientSocket.send(socketData);
-        
-        
+        clientSocket.send(sendPacket);
+
+        System.out.println("2-------------------------");
+
+
+        byte[] receiveData = new byte[1024];
+        DatagramPacket receivePacket =
+                new DatagramPacket(receiveData, receiveData.length);
+
+        System.out.println("3-------------------------");
 
         //TODO: output
         //Read datagram from server
         clientSocket.receive(receivePacket);
-        String modifiedSentence =
-                new String(receivePacket.getData());
-        System.out.println("FROM SERVER:" + modifiedSentence);
+        System.out.println("4-------------------------");
+        System.out.println("\n\nReceived: " + receivePacket.getLength() + " bytes");
+
+        for (int i = 0; i < receivePacket.getLength(); i++) {
+            System.out.print(" 0x" + String.format("%x", receiveData[i]) + " " );
+        }
+        System.out.println("\n");
+
+
+        //TODO: copy & paste from Dns_Client
+        DataInputStream din = new DataInputStream(new ByteArrayInputStream(receiveData));
+        System.out.println("Transaction ID: 0x" + String.format("%x", din.readShort()));
+        System.out.println("Flags: 0x" + String.format("%x", din.readShort()));
+        System.out.println("Questions: 0x" + String.format("%x", din.readShort()));
+        System.out.println("Answers RRs: 0x" + String.format("%x", din.readShort()));
+        System.out.println("Authority RRs: 0x" + String.format("%x", din.readShort()));
+        System.out.println("Additional RRs: 0x" + String.format("%x", din.readShort()));
+
+        int recLen = 0;
+        while ((recLen = din.readByte()) > 0) {
+            byte[] record = new byte[recLen];
+
+            for (int i = 0; i < recLen; i++) {
+                record[i] = din.readByte();
+            }
+
+            System.out.println("Record: " + new String(record, "UTF-8"));
+        }
+
+        System.out.println("Record Type: 0x" + String.format("%x", din.readShort()));
+        System.out.println("Class: 0x" + String.format("%x", din.readShort()));
+
+        System.out.println("Field: 0x" + String.format("%x", din.readShort()));
+        System.out.println("Type: 0x" + String.format("%x", din.readShort()));
+        System.out.println("Class: 0x" + String.format("%x", din.readShort()));
+        System.out.println("TTL: 0x" + String.format("%x", din.readInt()));
+
+        short addrLen = din.readShort();
+        System.out.println("Len: 0x" + String.format("%x", addrLen));
+
+        System.out.print("Address: ");
+        for (int i = 0; i < addrLen; i++ ) {
+            System.out.print("" + String.format("%d", (din.readByte() & 0xFF)) + ".");
+        }
+
+
+
+
+
+//        String modifiedSentence =
+//                new String(receivePacket.getData());
+//        System.out.println("FROM SERVER:" + modifiedSentence);
         clientSocket.close();
 
     }
