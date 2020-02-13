@@ -196,27 +196,51 @@ public class DnsClient {
 //        }
 
         //TODO: send query, socketdata is the input
-        //System.out.println("1-------------------------");
         InetAddress ipAddress = InetAddress.getByName(server);
         DatagramSocket clientSocket = new DatagramSocket();
-
+        clientSocket.setSoTimeout(timeout*1000);
         DatagramPacket sendPacket = new DatagramPacket(bsocketData, bsocketData.length, ipAddress, port);
-        //Send datagram to server
-        clientSocket.send(sendPacket);
-
-        //System.out.println("2-------------------------");
-
 
         byte[] receiveData = new byte[1024];
-        DatagramPacket receivePacket =
-                new DatagramPacket(receiveData, receiveData.length);
+        DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 
-        //System.out.println("3-------------------------");
+        int retryNumber = 0;
+        while (retryNumber < maxRetries) {
+            try{
 
-        
-        // receive packet
-        clientSocket.receive(receivePacket);
-        
+                long startTime = System.currentTimeMillis();
+                //Send datagram to server
+                clientSocket.send(sendPacket);
+
+
+                // receive packet
+                clientSocket.receive(receivePacket);
+
+                long endTime = System.currentTimeMillis();
+                clientSocket.close();
+
+                System.out.println("Response received after " + (endTime - startTime)/1000. + " seconds");
+                break;
+            }
+            //TODO: change the output
+            catch (SocketException e) {
+                System.out.println("ERROR\tCould not create socket");
+            } catch (UnknownHostException e ) {
+                System.out.println("ERROR\tUnknown host");
+            } catch (SocketTimeoutException e) {
+                System.out.println("ERROR\tSocket Timeout");
+                System.out.println("Reattempting request......");
+                retryNumber++;
+                continue;
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
+        }
+        if (retryNumber == maxRetries) {
+            throw new IllegalArgumentException("ERROR \t Maximum number of retries " + maxRetries + " exceeded!");
+        }
+
+
         //Yuhang Zhang 
         
         System.out.println("\n\nReceived: " + receivePacket.getLength() + " bytes");
