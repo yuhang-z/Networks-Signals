@@ -1,39 +1,85 @@
+import javafx.util.Pair;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 
-public class DnsResponse{
+public class DNSResponse {
 	private byte[] response;
-    private byte[] ID;
-    private boolean QR, AA, TC, RD, RA;
-    private int RCODE, QDCOUNT, ANCOUNT, NSCOUNT, ARCOUNT;
-    private DnsRecord[] answerRecords;
-    private DnsRecord[] additionalRecords;
-    private Type type;
+    private boolean AA;
+    private int RCODE;
+    private int ANCOUNT;
+    private int ARCOUNT;
+    private DNSDataRecord[] answerRecords;
+    private DNSDataRecord[] additionalRecords;
     private boolean noRecords = false;
 
-	public DnsResponse(byte[] response, int requestSize, Type type) {
+	public DNSResponse(byte[] response, int requestSize, Type type) {
 		this.response = response;
-		this.type = type;
 
-        this.validateResponseQuestionType();
-        this.parseHeader();
+        /*
+        First we check if returned type matches the original type
+         */
+        int index = 12;
+
+        while (this.response[index] != 0) {
+            index++;
+        }
+        byte[] qType = {this.response[index + 1], this.response[index + 2]};
+
+        if (this.getTypeFromByteArray(qType) != type) {
+            throw new RuntimeException("ERROR\tResponse query type does not match request query type");
+        }
+
+
+        /*
+        Now we analyze the header
+         */
+        //QR
+        boolean QR = getBit(response[2], 7) == 1;
+
+        //AA
+        this.AA = getBit(response[2], 2) == 1;
+
+        //RCODE
+        this.RCODE = response[3] & 0x0F;
+
+        //QDCount
+        byte[] QDCount = { response[4], response[5] };
+        ByteBuffer wrapped = ByteBuffer.wrap(QDCount);
+        int QDCOUNT = wrapped.getShort();
+
+        //ANCount
+        byte[] ANCount = { response[6], response[7] };
+        wrapped = ByteBuffer.wrap(ANCount);
+        this.ANCOUNT = wrapped.getShort();
+
+        //NSCount
+        byte[] NSCount = { response[8], response[9] };
+        wrapped = ByteBuffer.wrap(NSCount);
+        int NSCOUNT = wrapped.getShort();
+
+        //ARCount
+        byte[] ARCount = { response[10], response[11] };
+        wrapped = ByteBuffer.wrap(ARCount);
+        this.ARCOUNT = wrapped.getShort();
+
         
-        answerRecords = new DnsRecord[ANCOUNT];
+        answerRecords = new DNSDataRecord[ANCOUNT];
         int offSet = requestSize;
         for(int i = 0; i < ANCOUNT; i ++){
-        	answerRecords[i] = this.parseAnswer(offSet);
+        	answerRecords[i] = this.analyzeAnswer(offSet);
         	offSet += answerRecords[i].getByteLength();
         }
         
         //ns count even though we don't do anything
         for(int i = 0; i < NSCOUNT; i++){
-        	offSet += parseAnswer(offSet).getByteLength();
+        	offSet += analyzeAnswer(offSet).getByteLength();
         }
         
-        additionalRecords = new DnsRecord[ARCOUNT];
+        additionalRecords = new DNSDataRecord[ARCOUNT];
         for(int i = 0; i < ARCOUNT; i++){
-        	additionalRecords[i] = this.parseAnswer(offSet);
+        	additionalRecords[i] = this.analyzeAnswer(offSet);
         	offSet += additionalRecords[i].getByteLength();
         }
         try {
@@ -42,7 +88,9 @@ public class DnsResponse{
         	noRecords = true;
         }
 
-        this.validateQueryTypeIsResponse();
+        if (!QR) {
+            throw new RuntimeException("ERROR\tInvalid response from server: Message is not a response");
+        }
     }
 
     public void outputResponse() {
@@ -54,7 +102,7 @@ public class DnsResponse{
 
         System.out.println("***Answer Section (" + this.ANCOUNT + " answerRecords)***");
        
-        for (DnsRecord record : answerRecords){
+        for (DNSDataRecord record : answerRecords){
         	record.outputRecord();	
         }
 
@@ -62,7 +110,7 @@ public class DnsResponse{
 
         if (this.ARCOUNT > 0) {
             System.out.println("***Additional Section (" + this.ARCOUNT + " answerRecords)***");
-            for (DnsRecord record : additionalRecords){
+            for (DNSDataRecord record : additionalRecords){
             	record.outputRecord();
             }
         }
@@ -87,61 +135,16 @@ public class DnsResponse{
         }
     }
 
-    private void parseHeader(){
-        //ID
-        byte[] ID = new byte[2];
-        ID[0] = response[0];
-        ID[1] = response[1];
-        this.ID = ID;
 
-        //QR
-        this.QR = getBit(response[2], 7) == 1;
+    private DNSDataRecord analyzeAnswer(int index){
+    	DNSDataRecord result = new DNSDataRecord(this.AA);
 
-        //AA
-        this.AA = getBit(response[2], 2) == 1;
-
-        //TC
-        this.TC = getBit(response[2], 1) == 1;
-
-        //RD
-        this.RD = getBit(response[2], 0) == 1;
-
-        //RA
-        this.RA = getBit(response[3], 7) == 1;
-
-        //RCODE
-        this.RCODE = response[3] & 0x0F;
-
-        //QDCount
-        byte[] QDCount = { response[4], response[5] };
-        ByteBuffer wrapped = ByteBuffer.wrap(QDCount);
-        this.QDCOUNT = wrapped.getShort();
-
-        //ANCount
-        byte[] ANCount = { response[6], response[7] };
-        wrapped = ByteBuffer.wrap(ANCount);
-        this.ANCOUNT = wrapped.getShort();
-
-        //NSCount
-        byte[] NSCount = { response[8], response[9] };
-        wrapped = ByteBuffer.wrap(NSCount);
-        this.NSCOUNT = wrapped.getShort();
-
-        //ARCount
-        byte[] ARCount = { response[10], response[11] };
-        wrapped = ByteBuffer.wrap(ARCount);
-        this.ARCOUNT = wrapped.getShort();
-    }
-
-    private DnsRecord parseAnswer(int index){
-    	DnsRecord result = new DnsRecord(this.AA);
-    	
-        String domain = "";
+        String domain;
         int countByte = index;
 
-        DataEntry domainResult = getDomainFromIndex(countByte);
-        countByte += domainResult.getBytes();
-        domain = domainResult.getDomain();
+        Pair domainResult = getDomainFromIndex(countByte);
+        countByte += (int) domainResult.getValue();
+        domain = (String) domainResult.getKey();
         
         //Name
         result.setName(domain);
@@ -151,7 +154,7 @@ public class DnsResponse{
         ans_type[0] = response[countByte];
         ans_type[1] = response[countByte + 1];
         
-        result.setQueryType(getQTYPEFromByteArray(ans_type));
+        result.setQueryType(getTypeFromByteArray(ans_type));
 
         countByte += 2;
         //CLASS
@@ -179,16 +182,16 @@ public class DnsResponse{
         countByte +=2;
         switch (result.getQueryType()) {
             case A:
-                result.setDomain(parseATypeRDATA(rdLength, countByte));
+                result.setDomain(analyzeATypeRData(countByte));
                 break;
             case NS:
-                result.setDomain(parseNSTypeRDATA(rdLength, countByte));
+                result.setDomain(analyzeNSTypeRData(countByte));
                 break;
             case MX:
-                result.setDomain(parseMXTypeRDATA(rdLength, countByte, result));
+                result.setDomain(analyzeMXTypeRData(countByte, result));
                 break;
             case CNAME:
-                result.setDomain(parseCNAMETypeRDATA(rdLength, countByte));
+                result.setDomain(analyzeCNAMETypeRDdata(countByte));
                 break;
             case OTHER:
             	break;
@@ -197,7 +200,7 @@ public class DnsResponse{
         return result;
     }
 
-    private String parseATypeRDATA(int rdLength, int countByte) {
+    private String analyzeATypeRData(int countByte) {
         String address = "";
         byte[] byteAddress= { response[countByte], response[countByte + 1], response[countByte + 2], response[countByte + 3] };
         try {
@@ -210,66 +213,40 @@ public class DnsResponse{
         
     }
 
-    private String parseNSTypeRDATA(int rdLength, int countByte) {
-		DataEntry result = getDomainFromIndex(countByte);
-		String nameServer = result.getDomain();
-    	
-    	return nameServer;
+    private String analyzeNSTypeRData(int countByte) {
+    	return (String) getDomainFromIndex(countByte).getKey();
     }
 
-    private String parseMXTypeRDATA(int rdLength, int countByte, DnsRecord record) {
+    private String analyzeMXTypeRData(int countByte, DNSDataRecord record) {
     	byte[] mxPreference= {this.response[countByte], this.response[countByte + 1]};
     	ByteBuffer buf = ByteBuffer.wrap(mxPreference);
     	record.setMxPreference(buf.getShort());
-    	return getDomainFromIndex(countByte + 2).getDomain();
+    	return (String) getDomainFromIndex(countByte + 2).getKey();
     }
 
-    private String parseCNAMETypeRDATA(int rdLength, int countByte) {
-		DataEntry result = getDomainFromIndex(countByte);
-		String cname = result.getDomain();
-    	
-    	return cname;
+    private String analyzeCNAMETypeRDdata(int countByte) {
+    	return (String) getDomainFromIndex(countByte).getKey();
     }
 
-    private void validateQueryTypeIsResponse(){
-        if (!this.QR) {
-            throw new RuntimeException("ERROR\tInvalid response from server: Message is not a response");
-        }
-    }
 
-    private void validateResponseQuestionType() {
-        //Question starts at byte 13 (indexed at 11)
-        int index = 12;
-
-        while (this.response[index] != 0) {
-            index++;
-        }
-        byte[] qType = {this.response[index + 1], this.response[index + 2]};
-
-        if (this.getQTYPEFromByteArray(qType) != this.type) {
-            throw new RuntimeException("ERROR\tResponse query type does not match request query type");
-        }
-    }
-
-    private DataEntry getDomainFromIndex(int index){
-    	DataEntry result = new DataEntry();
+    private Pair getDomainFromIndex(int index){
     	int wordSize = response[index];
-    	String domain = "";
+    	StringBuilder domain = new StringBuilder();
     	boolean start = true;
     	int count = 0;
     	while(wordSize != 0){
 			if (!start){
-				domain += ".";
+				domain.append(".");
 			}
-	    	if ((wordSize & 0xC0) == (int) 0xC0) {
+	    	if ((wordSize & 0xC0) == 0xC0) {
 	    		byte[] offset = { (byte) (response[index] & 0x3F), response[index + 1] };
 	            ByteBuffer wrapped = ByteBuffer.wrap(offset);
-	            domain += getDomainFromIndex(wrapped.getShort()).getDomain();
+	            domain.append(getDomainFromIndex(wrapped.getShort()).getKey());
 	            index += 2;
 	            count +=2;
 	            wordSize = 0;
 	    	}else{
-	    		domain += getWordFromIndex(index);
+	    		domain.append(getWordFromIndex(index));
 	    		index += wordSize + 1;
 	    		count += wordSize + 1;
 	    		wordSize = response[index];
@@ -277,24 +254,23 @@ public class DnsResponse{
             start = false;
             
     	}
-    	result.setDomain(domain);
-    	result.setBytes(count);
-    	return result;
+
+        return new Pair<>(domain.toString(), count);
     }
     private String getWordFromIndex(int index){
-    	String word = "";
+    	StringBuilder word = new StringBuilder();
     	int wordSize = response[index];
     	for(int i =0; i < wordSize; i++){
-    		word += (char) response[index + i + 1];
+    		word.append((char) response[index + i + 1]);
 		}
-    	return word;
+    	return word.toString();
     }
 
     private int getBit(byte b, int position) {
     	return (b >> position) & 1;
     }
 
-    private Type getQTYPEFromByteArray(byte[] qType) {
+    private Type getTypeFromByteArray(byte[] qType) {
         if (qType[0] == 0) {
             if (qType[1] == 1) {
                 return Type.A;

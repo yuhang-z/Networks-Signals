@@ -13,11 +13,11 @@ public class DnsClient {
     // port (optional) is the UDP port number of the DNS server. Default value: 53.
     private static int port = 53;
 
-    //flags. Default value: 1
+    //types. Default value: 1
     // 1: A (IP address)
     // 2: MX (mail server)
     // 3: NS (name server)
-    private static Type flag = Type.A;
+    private static Type type = Type.A;
 
     public static void main(String[] args) throws IOException {
 
@@ -84,12 +84,12 @@ public class DnsClient {
                         break;
 
                     case "-mx":
-                        flag = Type.MX;
+                        type = Type.MX;
                         args = Arrays.copyOfRange(args, 1, args.length);
                         break label;
 
                     case "-ns":
-                        flag = Type.NS;
+                        type = Type.NS;
                         args = Arrays.copyOfRange(args, 1, args.length);
                         break label;
 
@@ -154,7 +154,7 @@ public class DnsClient {
 
         System.out.println("DnsClient sending request for " + name);
         System.out.println("Server: " + server);
-        switch (flag) {
+        switch (type) {
             case A:
                 System.out.println("Request type: A");
                 break;
@@ -169,7 +169,7 @@ public class DnsClient {
         socketData = socketData + "00";     // add "00" to indicate end
 
         // indicate which flag I'm using
-        switch (flag) {
+        switch (type) {
             case A:
                 socketData = socketData + "0001";
                 break;
@@ -249,188 +249,8 @@ public class DnsClient {
 
 
 
-        DnsResponse response = new DnsResponse(receivePacket.getData(), bsocketData.length, flag);
+        DNSResponse response = new DNSResponse(receivePacket.getData(), bsocketData.length, type);
         response.outputResponse();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//        //Yuhang Zhang
-//
-//        System.out.println("\n\nReceived: " + receivePacket.getLength() + " bytes");
-//
-//        for (int i = 0; i < receivePacket.getLength(); i++) {
-//            System.out.print(" 0x" + String.format("%x", receiveData[i]) + " " );
-//        }
-//        System.out.println("\n");
-//
-//
-//
-//        DataInputStream din = new DataInputStream(new ByteArrayInputStream(receiveData));
-//
-//        //COMMAND LINE OUTPUT ARGUMENTS:
-//
-//        //Authority
-//        String auth = "";
-//
-//        //Return type
-//        String rtype = "";
-//
-//        //TTL The number of seconds the results can be cached.
-//        String numsec = "";
-//
-//
-//        //Section1-----------------Name---------------- "only extract authority information"
-//
-//        //TransactionID--1
-//        String returnID = String.format("%x", din.readShort());
-//        String temp1 = String.format("%x", din.readShort());
-//        String returnQR = temp1.substring(0, 1);
-//
-//        //System.out.println("Transaction ID: 0x" + );
-//
-//        //Flags----------2
-//        din.readShort();
-//        //System.out.println("Flags: 0x" + String.format("%x", din.readShort()));
-//
-//        //Questions------3
-//        din.readShort();
-//        //System.out.println("Questions: 0x" + String.format("%x", din.readShort()));
-//
-//        //OPCODE---------4
-//        din.readShort();
-//        //System.out.println("Answers RRs: 0x" + String.format("%x", din.readShort()));
-//
-//        //***Authority---5
-//        auth = String.format("%x", din.readShort());
-//        //System.out.println("Authority RRs: 0x" + String.format("%x", din.readShort()));
-//        System.out.println(auth);
-//
-//        //TC-------------6
-//        din.readShort();
-//        //System.out.println("Additional RRs: 0x" + String.format("%x", din.readShort()));
-//
-//        int recLen = 0;
-//        while ((recLen = din.readByte()) > 0) {
-//            byte[] record = new byte[recLen];
-//
-//            for (int i = 0; i < recLen; i++) {
-//                record[i] = din.readByte();
-//            }
-//
-//            //System.out.println("Record: " + new String(record, "UTF-8"));
-//        }
-//        //Record Type----7
-//        din.readShort();
-//        //System.out.println("Record Type: 0x" + String.format("%x", din.readShort()));
-//        //Class----------8
-//        din.readShort();
-//        //System.out.println("Class: 0x" + String.format("%x", din.readShort()));
-//        //Field----------9
-//        din.readShort();
-//        //System.out.println("Field: 0x" + String.format("%x", din.readShort()));
-//
-//        //*****Type-----10
-//        rtype = String.format("%x", din.readShort());
-//        System.out.println(rtype);
-//        //System.out.println("Type: 0x" + String.format("%x", din.readShort()));
-//
-//        //Class---------11
-//        //"Specify the class of the data in the RDATA field. You should expect 0x0001 for this project, representing Internet addresses."
-//        din.readShort();
-//        //System.out.println("Class: 0x" + String.format("%x", din.readShort()));
-//
-//        //***TTL--------12
-//        numsec = String.format("%x", din.readShort());
-//        //System.out.println("TTL: 0x" + String.format("%x", din.readInt()));
-//        System.out.println(numsec);
-//
-//        din.readShort();
-//
-//        //addrLen-------13      determine the length of RDATA
-//        short addrLen = din.readShort();
-//        System.out.println("Len: 0x" + String.format("%x", addrLen));
-//
-//        //Section of RDATA
-//
-//        //System.out.println(Integer.parseInt(String.valueOf("f")));
-//
-//        byte[] bytes = rtype.getBytes("US-ASCII");
-//
-//        int a = bytes[0];
-//
-//        a =Integer.parseInt(String.valueOf(rtype));
-//
-//        int b =Integer.parseInt(String.valueOf(auth));
-//
-//        //IP
-//        if(a == 1){
-//        	String ipaddr ="";
-//            for (int i = 0; i < addrLen; i++ ) {
-//            	ipaddr = ipaddr.concat(String.format("%d", (din.readByte() & 0xFF)) + ".");
-//            }
-//            String authmessage;
-//            if(b == 0) {
-//            	authmessage = "nonauth";
-//            }else {
-//            	authmessage = "auth";
-//            }
-//            System.out.print("IP "+ipaddr+" "+numsec+" "+authmessage);
-//            clientSocket.close();
-//
-//        }
-//
-//        //NS
-//        if(a == 6) {
-//        	/*
-//        	String ipaddr ="";
-//
-//            //System.out.println("Record: " + new String(record, "UTF-8"));
-//        	for (int i = 0; i < addrLen; i++ ) {
-//            	ipaddr = ipaddr.concat(String.format("%d", (din.readByte() & 0xFF)) + " ");
-//            }
-//        	System.out.println("NS");
-//        	System.out.println(ipaddr);
-//        	*/
-//        	int rec = 0;
-//        	while ((rec = din.readByte()) > 0) {
-//                byte[] record = new byte[rec];
-//
-//                for (int i = 0; i < rec; i++) {
-//                    record[i] = din.readByte();
-//                }
-//
-//                System.out.println("Record: " + new String(record, "UTF-8"));
-//            }
-//        	clientSocket.close();
-//        }
-//
-//        //MX
-//        if(a == 2) {
-//        	System.out.println("MX");
-//        	clientSocket.close();
-//        }
     }
 }
