@@ -4,17 +4,17 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 
-public class DNSResponse {
+public class DnsResponse {
 	private byte[] response;
     private boolean AA;
     private int RCODE;
     private int ANCOUNT;
     private int ARCOUNT;
-    private DNSDataRecord[] answerRecords;
-    private DNSDataRecord[] additionalRecords;
+    private DnsOutput[] answerRecords;
+    private DnsOutput[] additionalRecords;
     private boolean noRecords = false;
 
-	public DNSResponse(byte[] response, int requestSize, Type type) {
+	public DnsResponse(byte[] response, int requestSize, Type type) {
 		this.response = response;
 
         /*
@@ -65,7 +65,7 @@ public class DNSResponse {
         this.ARCOUNT = wrapped.getShort();
 
         
-        answerRecords = new DNSDataRecord[ANCOUNT];
+        answerRecords = new DnsOutput[ANCOUNT];
         int offSet = requestSize;
         for(int i = 0; i < ANCOUNT; i ++){
         	answerRecords[i] = this.analyzeAnswer(offSet);
@@ -77,7 +77,7 @@ public class DNSResponse {
         	offSet += analyzeAnswer(offSet).getByteLength();
         }
         
-        additionalRecords = new DNSDataRecord[ARCOUNT];
+        additionalRecords = new DnsOutput[ARCOUNT];
         for(int i = 0; i < ARCOUNT; i++){
         	additionalRecords[i] = this.analyzeAnswer(offSet);
         	offSet += additionalRecords[i].getByteLength();
@@ -102,7 +102,7 @@ public class DNSResponse {
 
         System.out.println("***Answer Section (" + this.ANCOUNT + " answerRecords)***");
        
-        for (DNSDataRecord record : answerRecords){
+        for (DnsOutput record : answerRecords){
         	record.outputRecord();	
         }
 
@@ -110,7 +110,7 @@ public class DNSResponse {
 
         if (this.ARCOUNT > 0) {
             System.out.println("***Additional Section (" + this.ARCOUNT + " answerRecords)***");
-            for (DNSDataRecord record : additionalRecords){
+            for (DnsOutput record : additionalRecords){
             	record.outputRecord();
             }
         }
@@ -136,8 +136,8 @@ public class DNSResponse {
     }
 
 
-    private DNSDataRecord analyzeAnswer(int index){
-    	DNSDataRecord result = new DNSDataRecord(this.AA);
+    private DnsOutput analyzeAnswer(int index){
+    	DnsOutput result = new DnsOutput(this.AA);
 
         String domain;
         int countByte = index;
@@ -217,7 +217,7 @@ public class DNSResponse {
     	return (String) getDomainFromIndex(countByte).getKey();
     }
 
-    private String analyzeMXTypeRData(int countByte, DNSDataRecord record) {
+    private String analyzeMXTypeRData(int countByte, DnsOutput record) {
     	byte[] mxPreference= {this.response[countByte], this.response[countByte + 1]};
     	ByteBuffer buf = ByteBuffer.wrap(mxPreference);
     	record.setMxPreference(buf.getShort());

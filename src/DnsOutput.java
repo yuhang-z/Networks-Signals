@@ -1,5 +1,5 @@
 	
-public class DNSDataRecord {
+public class DnsOutput {
 	 private int timeToLive, rdLength, mxPreference;
 	 private String name, domain;
 	 private byte[] queryClass;
@@ -7,7 +7,7 @@ public class DNSDataRecord {
 	 private boolean auth;
 	 private int byteLength;
 	 
-	public DNSDataRecord(boolean auth){
+	public DnsOutput(boolean auth){
 		 this.auth = auth;
 	 }
 

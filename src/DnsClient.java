@@ -249,7 +249,7 @@ public class DnsClient {
 
 
 
-        DNSResponse response = new DNSResponse(receivePacket.getData(), bsocketData.length, type);
+        DnsResponse response = new DnsResponse(receivePacket.getData(), bsocketData.length, type);
         response.outputResponse();
 
     }
