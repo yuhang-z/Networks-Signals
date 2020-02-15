@@ -1,4 +1,7 @@
-# networksProjectsCompiling
+# networksProjects
+
+#Compile instructions for Assignemnt1:
+
 Argument Structure:
 [-t timeout] [-r max-retries] [-p port] [-mx|-ns] @server name
 
