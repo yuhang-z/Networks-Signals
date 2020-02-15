@@ -2,10 +2,10 @@
 
 ## Compile instructions for Assignemnt1:
 
-## Argument Structure:
+### Argument Structure:
 [-t timeout] [-r max-retries] [-p port] [-mx|-ns] @server name
 
-## Example:
+### Example:
 java DnsClient -t 10 -r 2 -ns @8.8.8.8 mcgill.ca
 
 
