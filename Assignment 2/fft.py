@@ -1,8 +1,13 @@
 import inspect
-
+import cmath
 import numpy as np
+from math import log, ceil
 import sys
 import os
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+from scipy import fftpack
+from matplotlib.colors import LogNorm
 
 
 def DFT_slow(x):
@@ -83,8 +88,90 @@ def IFFT(x):
     return list(map(lambda a: a / len(x), FFT_inverse(x)))
 
 
-mode = 1
+def twoFFT(x):
+    """ x is inported and modified as a 2-d array"""
+    m, n = x.shape
+    return np.array([ [ sum([ sum([ x[i,j]*np.exp(-1j*2*np.pi*(k_m*i/m + k_n*j/n)) for i in range(m) ]) for j in range(n) ]) for k_n in range(n) ] for k_m in range(m) ])
+        
+
+
+def twoIFFT(x):
+    m, n = x.shape
+    for k in range(m):
+        for l in range(n):
+            x[k,l] = sum([ sum([ x[i,j]*np.exp(j*2*np.pi*(k*i/m + l*j/n)) for i in range(m) ]) for j in range(n)])
+    return x   
+
+
+mode = 0
 address = "moonlanding.png"
+
+def plot_spectrum(im_fft):
+    from matplotlib.colors import LogNorm
+    # A logarithmic colormap
+    plt.imshow(np.abs(im_fft), norm=LogNorm(vmin=5))
+    plt.colorbar()
+
+# mode manipulation
+def modeOutput(mode, address):
+    if(mode == 1):
+        print("mode 1 is triggered")
+
+        # img is a 2-d array 
+        img_original = mpimg.imread(address)
+
+        #img_FFT = twoFFT(img_original)
+        img_FFT = fftpack.fft2(img_original)
+
+        plt.figure("Mode_1")
+        plt.subplot(211)
+        plt.imshow(img_original)
+        
+        plt.subplot(212)
+        plt.imshow(np.abs(img_FFT), norm=LogNorm(vmin=5))
+        plt.show()
+
+    if(mode == 2):
+        print("mode 2 is triggered")
+        keep_fraction = 0.09
+
+        # Call ff a copy of the original transform. Numpy arrays have a copy
+        # method for this purpose.
+        img_original = mpimg.imread(address)
+
+        im_fft2 = fftpack.fft2(img_original)
+
+
+        # Set r and c to be the number of rows and columns of the array.
+        r, c = im_fft2.shape
+
+        # Set to zero all rows with indices between r*keep_fraction and
+        # r*(1-keep_fraction):
+        im_fft2[int(r*keep_fraction):int(r*(1-keep_fraction))] = 0.0
+
+        # Similarly with the columns:
+        im_fft2[:, int(c*keep_fraction):int(c*(1-keep_fraction))] = 0.0
+
+        #plt.figure()
+        img_new = fftpack.ifft2(im_fft2).real
+        plt.figure("Mode_2")
+        plt.subplot(211)
+        plt.imshow(img_original)
+        
+        plt.subplot(212)
+        plt.imshow(img_new)
+        plt.show()
+
+    if(mode == 3):
+        T = 0.1
+        c = F3 * (P3 >= T)
+        fM = ifft2(c)*W*H
+        plt.imshow(np.abs(fM));    
+
+
+
+
+
 
 if __name__ == '__main__':
     # If there are more than two inputs, exit
@@ -114,6 +201,9 @@ if __name__ == '__main__':
             exit(1)
         else:
             address = sys.argv[2]
+
+        """ function call """
+        modeOutput(mode, address)    
 
     # Case 3: One input: either mode or address
     else:
