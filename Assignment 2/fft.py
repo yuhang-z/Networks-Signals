@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import cv2
 from matplotlib.colors import LogNorm
+import scipy.sparse
 
 
 def DFT_slow(inputArray):
@@ -117,22 +118,22 @@ def modeOutput(mode, address):
         print("mode 1 is triggered")
 
         # my function
-        # img_FFT = twoD_FFT(img_original)
+        img_FFT = twoD_FFT(img_original)
 
         # built-in function
-        img_FFT = np.fft.fft2(img_original)
+        #img_FFT = np.fft.fft2(img_original)
 
         plt.figure("Mode_1")
-        plt.subplot(211)
+        plt.subplot(121)
         plt.imshow(img_original)
 
-        plt.subplot(212)
+        plt.subplot(122)
         plt.imshow(np.abs(img_FFT), norm=LogNorm(vmin=5))
         plt.show()
 
     if mode == 2:
         print("mode 2 is triggered")
-        keep_fraction = 0.09
+        keep_fraction = 0.1
 
         # Call ff a copy of the original transform. Numpy arrays have a copy
         # method for this purpose.
@@ -144,25 +145,126 @@ def modeOutput(mode, address):
         #im_fft2 = np.fft.fft2(img_original)
 
         r, c = im_fft2.shape
-        im_fft2[int(r*keep_fraction):int(r*(1-keep_fraction))] = 0.0
+        print(im_fft2[10, 10])
+
+        im_fft2[10,10] = 0.0
+
+        print(im_fft2[10, 10])
+        print("checkpoint1")
+        im_fft2[int(r*keep_fraction):int(r*(1-keep_fraction)),:] = 0.0
         im_fft2[:, int(c*keep_fraction):int(c*(1-keep_fraction))] = 0.0
 
-        #img_new = np.fft.ifft2(im_fft2).real
         img_new = twoD_IFFT(im_fft2).real
 
         plt.figure("Mode_2")
-        plt.subplot(211)
+        plt.subplot(121)
         plt.imshow(img_original)
 
-        plt.subplot(212)
+        plt.subplot(122)
         plt.imshow(img_new)
         plt.show()
+        
+    if (mode == 3):
+        print("mode 3 is triggered")
+        threshold_19 = 1
+        threshold_38 = 10
+        threshold_57 = 100
+        threshold_76 = 1000
+        threshold_95 = 10000
 
-    # if (mode == 3):
-    # T = 0.1
-    # c = F3 * (P3 >= T)
-    # fM = ifft2(c) * W * H
-    # plt.imshow(np.abs(fM));
+        im_fft2 = twoD_FFT(img_original)
+
+        h, w = im_fft2.shape
+        # print(im_fft2.shape)
+
+        # print(im_fft2[10, 10])
+
+        # im_fft2[10,10] = 0.0
+
+        # print(im_fft2[10, 10])
+        # print("checkpoint2")
+
+        im_19 = im_fft2
+        im_38 = im_fft2
+        im_57 = im_fft2
+        im_76 = im_fft2
+        im_95 = im_fft2
+
+        for j in range(w):
+            for i in range(h):
+                if int(abs(im_19[i, j])) < threshold_19:
+                    im_19[i, j] = 0.0
+                if int(abs(im_38[i, j])) < threshold_38:
+                    im_38[i, j] = 0.0    
+                if int(abs(im_57[i, j])) < threshold_57:
+                    im_57[i, j] = 0.0   
+                if int(abs(im_76[i, j])) < threshold_76:
+                    im_76[i, j] = 0.0   
+                if int(abs(im_95[i, j])) < threshold_95:
+                    im_95[i, j] = 0.0    
+
+        scipy.sparse.save_npz('/matrix/sparse_matrix_im_fft2.npz', im_fft2)
+        scipy.sparse.save_npz('/matrix/sparse_matrix_im_19.npz', im_19)
+        scipy.sparse.save_npz('/matrix/sparse_matrix_im_38.npz', im_38)
+        scipy.sparse.save_npz('/matrix/sparse_matrix_im_57.npz', im_57)
+        scipy.sparse.save_npz('/matrix/sparse_matrix_im_76.npz', im_76)
+        scipy.sparse.save_npz('/matrix/sparse_matrix_im_95.npz', im_95)
+
+        im_i19 = twoD_IFFT(im_19).real 
+        im_i38 = twoD_IFFT(im_38).real
+        im_i57 = twoD_IFFT(im_57).real
+        im_i76 = twoD_IFFT(im_76).real
+        im_i95 = twoD_IFFT(im_95).real
+
+        # out_original = np.count_nonzero(im_fft2)
+
+        # out_19 = np.count_nonzero(im_i19)
+        # out_38 = np.count_nonzero(im_i38)
+        # out_57 = np.count_nonzero(im_i57)
+        # out_76 = np.count_nonzero(im_i76)
+        # out_95 = np.count_nonzero(im_i95)
+        
+        # print("19%:", out_19/out_original)
+        # print("38%:", out_38/out_original)
+        # print("57%:", out_57/out_original)
+        # print("76%:", out_76/out_original)
+        # print("95%:", out_95/out_original)
+
+        print("19%:", np.count_nonzero(im_i19))
+        print("38%:", np.count_nonzero(im_i38))
+        print("57%:", np.count_nonzero(im_i57))
+        print("76%:", np.count_nonzero(im_i76))
+        print("95%:", np.count_nonzero(im_i95))
+
+
+        plt.figure("Mode_3")
+   
+        plt.subplot(231)
+        plt.imshow(img_original)
+
+        plt.subplot(232)
+        plt.imshow(im_i19)
+
+        plt.subplot(233)
+        plt.imshow(im_i38)
+
+        plt.subplot(234)
+        plt.imshow(im_i57)
+
+        plt.subplot(235)
+        plt.imshow(im_i76)
+
+        plt.subplot(236)
+        plt.imshow(im_i95)
+
+        plt.show()
+
+    if (mode == 4):
+        print("mode 4 is triggered")
+
+
+
+    
 
 
 if __name__ == '__main__':
