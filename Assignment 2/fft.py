@@ -2,6 +2,8 @@ import numpy as np
 import sys
 import os
 import matplotlib.pyplot as plt
+import time
+import statistics
 import matplotlib.image as mpimg
 import cv2
 from matplotlib.colors import LogNorm
@@ -97,6 +99,28 @@ def twoD_IFFT(input2DArray):
         list(map(lambda a: a / (len(input2DArray) * len(input2DArray[0])), IFFT_2D(IFFT_2D(input2DArray).T).T)))
 
 
+def DFT_2(f, N):
+    '''
+    :param f: 2_dim marix
+    :param N: even; denote number of rows
+    :param M: even; denote number of cols
+    :return: DFT results without shifting(complex number)
+    '''
+    if N % 2 != 0:
+        raise ValueError("size of x must be a power of 2")
+    f = f.astype('float64')
+    rows = f.shape[0]
+    cols = f.shape[1]
+    n = np.arange(0, N, 1).reshape((N, 1))
+    row = np.arange(0, rows, 1).reshape((1, rows))
+    left = np.exp(-1j*2*np.pi/N*(n @ row))
+    col = np.arange(0, cols, 1).reshape((cols, 1))
+    m = np.arange(0, N, 1).reshape((1, N))
+    right = np.exp(-1j*2*np.pi/N*(col @ m))
+    F = left @ f @ right
+    return F
+
+
 def next_power_of_2(x):
     return 1 if x == 0 else 2 ** (x - 1).bit_length()
 
@@ -121,7 +145,7 @@ def modeOutput(mode, address):
         img_FFT = twoD_FFT(img_original)
 
         # built-in function
-        #img_FFT = np.fft.fft2(img_original)
+        # img_FFT = np.fft.fft2(img_original)
 
         plt.figure("Mode_1")
         plt.subplot(121)
@@ -142,17 +166,17 @@ def modeOutput(mode, address):
         im_fft2 = twoD_FFT(img_original)
 
         # built-in function
-        #im_fft2 = np.fft.fft2(img_original)
+        # im_fft2 = np.fft.fft2(img_original)
 
         r, c = im_fft2.shape
         print(im_fft2[10, 10])
 
-        im_fft2[10,10] = 0.0
+        im_fft2[10, 10] = 0.0
 
         print(im_fft2[10, 10])
         print("checkpoint1")
-        im_fft2[int(r*keep_fraction):int(r*(1-keep_fraction)),:] = 0.0
-        im_fft2[:, int(c*keep_fraction):int(c*(1-keep_fraction))] = 0.0
+        im_fft2[int(r * keep_fraction):int(r * (1 - keep_fraction)), :] = 0.0
+        im_fft2[:, int(c * keep_fraction):int(c * (1 - keep_fraction))] = 0.0
 
         img_new = twoD_IFFT(im_fft2).real
 
@@ -163,7 +187,7 @@ def modeOutput(mode, address):
         plt.subplot(122)
         plt.imshow(img_new)
         plt.show()
-        
+
     if (mode == 3):
         print("mode 3 is triggered")
         threshold_19 = 1
@@ -195,13 +219,13 @@ def modeOutput(mode, address):
                 if int(abs(im_19[i, j])) < threshold_19:
                     im_19[i, j] = 0.0
                 if int(abs(im_38[i, j])) < threshold_38:
-                    im_38[i, j] = 0.0    
+                    im_38[i, j] = 0.0
                 if int(abs(im_57[i, j])) < threshold_57:
-                    im_57[i, j] = 0.0   
+                    im_57[i, j] = 0.0
                 if int(abs(im_76[i, j])) < threshold_76:
-                    im_76[i, j] = 0.0   
+                    im_76[i, j] = 0.0
                 if int(abs(im_95[i, j])) < threshold_95:
-                    im_95[i, j] = 0.0    
+                    im_95[i, j] = 0.0
 
         scipy.sparse.save_npz('/matrix/sparse_matrix_im_fft2.npz', im_fft2)
         scipy.sparse.save_npz('/matrix/sparse_matrix_im_19.npz', im_19)
@@ -210,7 +234,7 @@ def modeOutput(mode, address):
         scipy.sparse.save_npz('/matrix/sparse_matrix_im_76.npz', im_76)
         scipy.sparse.save_npz('/matrix/sparse_matrix_im_95.npz', im_95)
 
-        im_i19 = twoD_IFFT(im_19).real 
+        im_i19 = twoD_IFFT(im_19).real
         im_i38 = twoD_IFFT(im_38).real
         im_i57 = twoD_IFFT(im_57).real
         im_i76 = twoD_IFFT(im_76).real
@@ -223,7 +247,7 @@ def modeOutput(mode, address):
         # out_57 = np.count_nonzero(im_i57)
         # out_76 = np.count_nonzero(im_i76)
         # out_95 = np.count_nonzero(im_i95)
-        
+
         # print("19%:", out_19/out_original)
         # print("38%:", out_38/out_original)
         # print("57%:", out_57/out_original)
@@ -236,9 +260,8 @@ def modeOutput(mode, address):
         print("76%:", np.count_nonzero(im_i76))
         print("95%:", np.count_nonzero(im_i95))
 
-
         plt.figure("Mode_3")
-   
+
         plt.subplot(231)
         plt.imshow(img_original)
 
@@ -259,12 +282,35 @@ def modeOutput(mode, address):
 
         plt.show()
 
-    if (mode == 4):
+    if mode == 4:
         print("mode 4 is triggered")
+        x = 256
+        y = np.random.rand(x, x)
+        startTime = time.perf_counter()
+        a = DFT_2(y, x)
+        endTime = time.perf_counter()
+        startTime2 = time.perf_counter()
+        a2 = twoD_FFT(y)
+        endTime2 = time.perf_counter()
+        print(str(endTime-startTime) + " " + str(endTime2-startTime2))
+        # with open("result2.txt", "w") as fp:
+        #     for j in range(5):
+        #         fp.write(str(x) + '\n')
+        #         for i in range(15):
+        #             y = np.random.rand(x, x)
+        #             startTime = time.perf_counter()
+        #             my = DFT_2(y, x)
+        #             endTime = time.perf_counter()
+        #             print(np.allclose(my, np.fft.fft2(y)))
+        #             diffTime = endTime - startTime
+        #             fp.write(str(diffTime) + '\n')
+        #         fp.write('\n')
+        #         x *= 2
+        #         print(x)
+        #
+        # fp.close()
 
 
-
-    
 
 
 if __name__ == '__main__':
