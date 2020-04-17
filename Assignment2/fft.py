@@ -2,6 +2,8 @@ import numpy as np
 import sys
 import os
 import matplotlib.pyplot as plt
+import time
+import statistics
 import matplotlib.image as mpimg
 import cv2
 from matplotlib.colors import LogNorm
@@ -20,6 +22,10 @@ def IDFT_slow(inputArray):
     N = inputArray.size
     V = np.array([[np.exp(2j * np.pi * v * y / N) for v in range(N)] for y in range(N)])
     return inputArray.dot(V)
+
+
+def IDFT(inputArray):
+    return list(map(lambda a: a / len(inputArray), IDFT_slow(inputArray)))
 
 
 def FFT(inputArray):
@@ -52,6 +58,10 @@ def FFT_inverse(inputArray):
         return np.concatenate([X_even + factor[:int(N / 2)] * X_odd, X_even + factor[int(N / 2):] * X_odd])
 
 
+def IFFT(inputArray):
+    return list(map(lambda a: a / len(inputArray), FFT_inverse(inputArray)))
+
+
 def FFT_2D(input2DArray):
     N = input2DArray.shape[1]
     if N % 2 > 0:
@@ -64,6 +74,11 @@ def FFT_2D(input2DArray):
         factor = np.array([np.exp(-2j * np.pi * np.arange(N) / N) for i in range(input2DArray.shape[0])])
         return np.hstack([X_even + np.multiply(factor[:, :int(N / 2)], X_odd),
                           X_even + np.multiply(factor[:, int(N / 2):], X_odd)])
+
+
+def twoD_FFT(input2DArray):
+    input2DArray = np.asarray(input2DArray, dtype=float)
+    return FFT_2D(FFT_2D(input2DArray).T).T
 
 
 def IFFT_2D(input2DArray):
@@ -80,23 +95,19 @@ def IFFT_2D(input2DArray):
                           X_even + np.multiply(factor[:, int(N / 2):], X_odd)])
 
 
-def IDFT(inputArray):
-    return list(map(lambda a: a / len(inputArray), IDFT_slow(inputArray)))
-
-
-def IFFT(inputArray):
-    return list(map(lambda a: a / len(inputArray), FFT_inverse(inputArray)))
-
-
-def twoD_FFT(input2DArray):
-    input2DArray = np.asarray(input2DArray, dtype=float)
-    return FFT_2D(FFT_2D(input2DArray).T).T
-
-
 def twoD_IFFT(input2DArray):
     input2DArray = np.asarray(input2DArray, dtype=complex)
     return np.array(
         list(map(lambda a: a / (len(input2DArray) * len(input2DArray[0])), IFFT_2D(IFFT_2D(input2DArray).T).T)))
+
+
+def DFT_2D(input2DArray):
+    return np.array([DFT_slow(input2DArray[i, :]) for i in range(input2DArray.shape[0])])
+
+
+def twoD_DFT(input2DArray):
+    input2DArray = np.asarray(input2DArray, dtype=float)
+    return DFT_2D(DFT_2D(input2DArray).T).T
 
 
 def next_power_of_2(x):
@@ -123,7 +134,7 @@ def modeOutput(mode, address):
         img_FFT = twoD_FFT(img_original)
 
         # built-in function
-        #img_FFT = np.fft.fft2(img_original)
+        # img_FFT = np.fft.fft2(img_original)
 
         plt.figure("Mode_1")
         plt.subplot(121)
@@ -144,17 +155,17 @@ def modeOutput(mode, address):
         im_fft2 = twoD_FFT(img_original)
 
         # built-in function
-        #im_fft2 = np.fft.fft2(img_original)
+        # im_fft2 = np.fft.fft2(img_original)
 
         r, c = im_fft2.shape
         print(im_fft2[10, 10])
 
-        im_fft2[10,10] = 0.0
+        im_fft2[10, 10] = 0.0
 
         print(im_fft2[10, 10])
         print("checkpoint1")
-        im_fft2[int(r*keep_fraction):int(r*(1-keep_fraction)),:] = 0.0
-        im_fft2[:, int(c*keep_fraction):int(c*(1-keep_fraction))] = 0.0
+        im_fft2[int(r * keep_fraction):int(r * (1 - keep_fraction)), :] = 0.0
+        im_fft2[:, int(c * keep_fraction):int(c * (1 - keep_fraction))] = 0.0
 
         img_new = twoD_IFFT(im_fft2).real
 
@@ -165,7 +176,7 @@ def modeOutput(mode, address):
         plt.subplot(122)
         plt.imshow(img_new)
         plt.show()
-        
+
     if (mode == 3):
         print("mode 3 is triggered")
         threshold_19 = 2900
@@ -179,7 +190,7 @@ def modeOutput(mode, address):
         h, w = im_fft2.shape
         print("---------------------------")
 
-        print("Image Pixels Number:", h*w)
+        print("Image Pixels Number:", h * w)
         print("---------------------------------")
         # print(im_fft2.shape)
 
@@ -189,7 +200,7 @@ def modeOutput(mode, address):
 
         # print(im_fft2[10, 10])
         # print("checkpoint2")
-        num_0_19 = 0 
+        num_0_19 = 0
         num_0_38 = 0
         num_0_57 = 0
         num_0_76 = 0
@@ -217,7 +228,7 @@ def modeOutput(mode, address):
             for i in range(h):
                 if int(abs(im_57[i, j])) < threshold_57:
                     im_57[i, j] = complex(0, 0)
-                    num_0_57 += 1  
+                    num_0_57 += 1
 
         im_76 = twoD_FFT(img_original)
 
@@ -235,8 +246,6 @@ def modeOutput(mode, address):
                     im_95[i, j] = complex(0, 0)
                     num_0_95 += 1
 
-        
-
         # for j in range(w):
         #     for i in range(h):
         #         if int(abs(im_19[i, j])) < threshold_19:
@@ -244,10 +253,10 @@ def modeOutput(mode, address):
         #             num_0_19 += 1
         #         if int(abs(im_38[i, j])) < threshold_38:
         #             im_38[i, j] = complex(0, 0)
-        #             num_0_38 += 1  
+        #             num_0_38 += 1
         #         if int(abs(im_57[i, j])) < threshold_57:
         #             im_57[i, j] = complex(0, 0)
-        #             num_0_57 += 1  
+        #             num_0_57 += 1
         #         if int(abs(im_76[i, j])) < threshold_76:
         #             im_76[i, j] = complex(0, 0)
         #             num_0_76 += 1
@@ -255,19 +264,19 @@ def modeOutput(mode, address):
         #             im_95[i, j] = complex(0, 0)
         #             num_0_95 += 1
 
+        if not os.path.exists('matrix'):
+            os.mkdir('matrix')
 
+        savez_compressed('matrix/compressImage_19.npz', im_19)
+        savez_compressed('matrix/compressImage_38.npz', im_38)
+        savez_compressed('matrix/compressImage_57.npz', im_57)
+        savez_compressed('matrix/compressImage_76.npz', im_76)
+        savez_compressed('matrix/compressImage_95.npz', im_95)
 
-        savez_compressed('/Users/YuhangZhang/Desktop/gh/networksProjects/Assignment2/matrix/compressImage_19.npz', im_19)
-        savez_compressed('/Users/YuhangZhang/Desktop/gh/networksProjects/Assignment2/matrix/compressImage_38.npz', im_38)
-        savez_compressed('/Users/YuhangZhang/Desktop/gh/networksProjects/Assignment2/matrix/compressImage_57.npz', im_57)
-        savez_compressed('/Users/YuhangZhang/Desktop/gh/networksProjects/Assignment2/matrix/compressImage_76.npz', im_76)
-        savez_compressed('/Users/YuhangZhang/Desktop/gh/networksProjects/Assignment2/matrix/compressImage_95.npz', im_95)
-
-        
         # homedir = os.path.expanduser("~")
         # cwd = os.getcwd()
         # pathset = os.path.join(homedir, "Desktop/gh/networksProjects/Assignment 2/matrix")
-        
+
         # output_19 = "compressedImage_19.npz"
 
         # print("file is created1")
@@ -277,11 +286,9 @@ def modeOutput(mode, address):
 
         #     ds = {"ORE_MAX_GIORNATA": 5}
         #     # write the file in the new directory
-        #     np.save(os.path.join(pathset, output_19), ds)    
+        #     np.save(os.path.join(pathset, output_19), ds)
 
-        
-
-        im_i19 = twoD_IFFT(im_19).real 
+        im_i19 = twoD_IFFT(im_19).real
         im_i38 = twoD_IFFT(im_38).real
         im_i57 = twoD_IFFT(im_57).real
         im_i76 = twoD_IFFT(im_76).real
@@ -297,9 +304,8 @@ def modeOutput(mode, address):
 
         print("---------------------------------")
 
-
         plt.figure("Mode_3")
-   
+
         plt.subplot(231)
         plt.imshow(img_original)
 
@@ -320,12 +326,66 @@ def modeOutput(mode, address):
 
         plt.show()
 
-    if (mode == 4):
+    if mode == 4:
         print("mode 4 is triggered")
+        # print(np.allclose(a, a2))
+        # print(str(endTime-startTime) + " " + str(endTime2-startTime2))
+        size = [32, 64, 128, 256, 512]
 
+        dft_mean = list()
+        dft_std = list()
+        fft_mean = list()
+        fft_std = list()
 
+        x = 32
+        for j in range(5):
+            dft_list = list()
+            for i in range(15):
+                y = np.random.rand(x, x)
+                startTime = time.perf_counter()
+                twoD_DFT(y)
+                endTime = time.perf_counter()
+                # print(np.allclose(my, np.fft.fft2(y)))
+                diffTime = endTime - startTime
+                dft_list.append(diffTime)
 
-    
+            dft_mean.append(statistics.mean(dft_list))
+            dft_std.append(statistics.stdev(dft_list))
+            x *= 2
+
+        x = 32
+        for j in range(5):
+            fft_list = list()
+            for i in range(15):
+                y = np.random.rand(x, x)
+                startTime = time.perf_counter()
+                twoD_FFT(y)
+                endTime = time.perf_counter()
+                # print(np.allclose(my, np.fft.fft2(y)))
+                diffTime = endTime - startTime
+                fft_list.append(diffTime)
+
+            fft_mean.append(statistics.mean(fft_list))
+            fft_std.append(statistics.stdev(fft_list))
+            x *= 2
+
+        plt.figure("Mode_4")
+        plt.subplot(121)
+        plt.plot(size, dft_mean, label="DFT")
+        plt.plot(size, fft_mean, label="FFT")
+        plt.xlabel('Size')
+        plt.ylabel('Runtime Mean')
+        plt.title('Mean')
+        plt.legend()
+
+        plt.subplot(122)
+        plt.plot(size, dft_std, label="DFT")
+        plt.plot(size, fft_std, label="FFT")
+        plt.xlabel('Size')
+        plt.ylabel('Runtime Std. Dev.')
+        plt.title('Standard Deviation')
+        plt.legend()
+        plt.show()
 
 
 if __name__ == '__main__':
