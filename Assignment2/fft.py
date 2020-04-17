@@ -168,17 +168,19 @@ def modeOutput(mode, address):
         
     if (mode == 3):
         print("mode 3 is triggered")
-        threshold_19 = 3000
+        threshold_19 = 2900
         threshold_38 = 5000
         threshold_57 = 8000
-        threshold_76 = 16000
-        threshold_95 = 43000
+        threshold_76 = 13000
+        threshold_95 = 42500
 
         im_fft2 = twoD_FFT(img_original)
 
         h, w = im_fft2.shape
+        print("---------------------------")
 
-        print("size:", h*w)
+        print("Image Pixels Number:", h*w)
+        print("---------------------------------")
         # print(im_fft2.shape)
 
         # print(im_fft2[10, 10])
@@ -187,44 +189,79 @@ def modeOutput(mode, address):
 
         # print(im_fft2[10, 10])
         # print("checkpoint2")
-
-        im_19 = im_fft2
-        im_38 = im_fft2
-        im_57 = im_fft2
-        im_76 = im_fft2
-        im_95 = im_fft2
-
         num_0_19 = 0 
         num_0_38 = 0
         num_0_57 = 0
         num_0_76 = 0
         num_0_95 = 0
 
+        im_19 = twoD_FFT(img_original)
+
         for j in range(w):
             for i in range(h):
                 if int(abs(im_19[i, j])) < threshold_19:
-                    im_19[i, j] = 0.0
+                    im_19[i, j] = complex(0, 0)
                     num_0_19 += 1
+
+        im_38 = twoD_FFT(img_original)
+
+        for j in range(w):
+            for i in range(h):
                 if int(abs(im_38[i, j])) < threshold_38:
-                    im_38[i, j] = 0.0  
-                    num_0_38 += 1  
+                    im_38[i, j] = complex(0, 0)
+                    num_0_38 += 1
+
+        im_57 = twoD_FFT(img_original)
+
+        for j in range(w):
+            for i in range(h):
                 if int(abs(im_57[i, j])) < threshold_57:
-                    im_57[i, j] = 0.0 
+                    im_57[i, j] = complex(0, 0)
                     num_0_57 += 1  
+
+        im_76 = twoD_FFT(img_original)
+
+        for j in range(w):
+            for i in range(h):
                 if int(abs(im_76[i, j])) < threshold_76:
-                    im_76[i, j] = 0.0   
+                    im_76[i, j] = complex(0, 0)
                     num_0_76 += 1
+
+        im_95 = twoD_FFT(img_original)
+
+        for j in range(w):
+            for i in range(h):
                 if int(abs(im_95[i, j])) < threshold_95:
-                    im_95[i, j] = 0.0    
+                    im_95[i, j] = complex(0, 0)
                     num_0_95 += 1
 
+        
+
+        # for j in range(w):
+        #     for i in range(h):
+        #         if int(abs(im_19[i, j])) < threshold_19:
+        #             im_19[i, j] = complex(0, 0)
+        #             num_0_19 += 1
+        #         if int(abs(im_38[i, j])) < threshold_38:
+        #             im_38[i, j] = complex(0, 0)
+        #             num_0_38 += 1  
+        #         if int(abs(im_57[i, j])) < threshold_57:
+        #             im_57[i, j] = complex(0, 0)
+        #             num_0_57 += 1  
+        #         if int(abs(im_76[i, j])) < threshold_76:
+        #             im_76[i, j] = complex(0, 0)
+        #             num_0_76 += 1
+        #         if int(abs(im_95[i, j])) < threshold_95:
+        #             im_95[i, j] = complex(0, 0)
+        #             num_0_95 += 1
 
 
-        savez_compressed('/Users/YuhangZhang/Desktop/gh/networksProjects/Assignment 2/matrix/compressImage_19.npz', im_19)
-        savez_compressed('/Users/YuhangZhang/Desktop/gh/networksProjects/Assignment 2/matrix/compressImage_38.npz', im_38)
-        savez_compressed('/Users/YuhangZhang/Desktop/gh/networksProjects/Assignment 2/matrix/compressImage_57.npz', im_57)
-        savez_compressed('/Users/YuhangZhang/Desktop/gh/networksProjects/Assignment 2/matrix/compressImage_76.npz', im_76)
-        savez_compressed('/Users/YuhangZhang/Desktop/gh/networksProjects/Assignment 2/matrix/compressImage_95.npz', im_95)
+
+        savez_compressed('/Users/YuhangZhang/Desktop/gh/networksProjects/Assignment2/matrix/compressImage_19.npz', im_19)
+        savez_compressed('/Users/YuhangZhang/Desktop/gh/networksProjects/Assignment2/matrix/compressImage_38.npz', im_38)
+        savez_compressed('/Users/YuhangZhang/Desktop/gh/networksProjects/Assignment2/matrix/compressImage_57.npz', im_57)
+        savez_compressed('/Users/YuhangZhang/Desktop/gh/networksProjects/Assignment2/matrix/compressImage_76.npz', im_76)
+        savez_compressed('/Users/YuhangZhang/Desktop/gh/networksProjects/Assignment2/matrix/compressImage_95.npz', im_95)
 
         
         # homedir = os.path.expanduser("~")
@@ -242,7 +279,7 @@ def modeOutput(mode, address):
         #     # write the file in the new directory
         #     np.save(os.path.join(pathset, output_19), ds)    
 
-
+        
 
         im_i19 = twoD_IFFT(im_19).real 
         im_i38 = twoD_IFFT(im_38).real
@@ -250,11 +287,15 @@ def modeOutput(mode, address):
         im_i76 = twoD_IFFT(im_76).real
         im_i95 = twoD_IFFT(im_95).real
 
-        print("19%:", num_0_19)
-        print("38%:", num_0_38)
-        print("57%:", num_0_57)
-        print("76%:", num_0_76)
-        print("95%:", num_0_95)
+        print("Number of 0-coefficient-pixels")
+
+        print("at 19% Compression Level:", num_0_19)
+        print("at 38% Compression Level:", num_0_38)
+        print("at 57% Compression Level:", num_0_57)
+        print("at 76% Compression Level:", num_0_76)
+        print("at 95% Compression Level:", num_0_95)
+
+        print("---------------------------------")
 
 
         plt.figure("Mode_3")
