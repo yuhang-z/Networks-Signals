@@ -6,6 +6,8 @@ import matplotlib.image as mpimg
 import cv2
 from matplotlib.colors import LogNorm
 import scipy.sparse
+from tempfile import TemporaryFile
+from numpy import savez_compressed
 
 
 def DFT_slow(inputArray):
@@ -133,7 +135,7 @@ def modeOutput(mode, address):
 
     if mode == 2:
         print("mode 2 is triggered")
-        keep_fraction = 0.1
+        keep_fraction = 0.15
 
         # Call ff a copy of the original transform. Numpy arrays have a copy
         # method for this purpose.
@@ -166,15 +168,17 @@ def modeOutput(mode, address):
         
     if (mode == 3):
         print("mode 3 is triggered")
-        threshold_19 = 1
-        threshold_38 = 10
-        threshold_57 = 100
-        threshold_76 = 1000
-        threshold_95 = 10000
+        threshold_19 = 3000
+        threshold_38 = 5000
+        threshold_57 = 8000
+        threshold_76 = 16000
+        threshold_95 = 43000
 
         im_fft2 = twoD_FFT(img_original)
 
         h, w = im_fft2.shape
+
+        print("size:", h*w)
         # print(im_fft2.shape)
 
         # print(im_fft2[10, 10])
@@ -190,25 +194,55 @@ def modeOutput(mode, address):
         im_76 = im_fft2
         im_95 = im_fft2
 
+        num_0_19 = 0 
+        num_0_38 = 0
+        num_0_57 = 0
+        num_0_76 = 0
+        num_0_95 = 0
+
         for j in range(w):
             for i in range(h):
                 if int(abs(im_19[i, j])) < threshold_19:
                     im_19[i, j] = 0.0
+                    num_0_19 += 1
                 if int(abs(im_38[i, j])) < threshold_38:
-                    im_38[i, j] = 0.0    
+                    im_38[i, j] = 0.0  
+                    num_0_38 += 1  
                 if int(abs(im_57[i, j])) < threshold_57:
-                    im_57[i, j] = 0.0   
+                    im_57[i, j] = 0.0 
+                    num_0_57 += 1  
                 if int(abs(im_76[i, j])) < threshold_76:
                     im_76[i, j] = 0.0   
+                    num_0_76 += 1
                 if int(abs(im_95[i, j])) < threshold_95:
                     im_95[i, j] = 0.0    
+                    num_0_95 += 1
 
-        scipy.sparse.save_npz('/matrix/sparse_matrix_im_fft2.npz', im_fft2)
-        scipy.sparse.save_npz('/matrix/sparse_matrix_im_19.npz', im_19)
-        scipy.sparse.save_npz('/matrix/sparse_matrix_im_38.npz', im_38)
-        scipy.sparse.save_npz('/matrix/sparse_matrix_im_57.npz', im_57)
-        scipy.sparse.save_npz('/matrix/sparse_matrix_im_76.npz', im_76)
-        scipy.sparse.save_npz('/matrix/sparse_matrix_im_95.npz', im_95)
+
+
+        savez_compressed('/Users/YuhangZhang/Desktop/gh/networksProjects/Assignment 2/matrix/compressImage_19.npz', im_19)
+        savez_compressed('/Users/YuhangZhang/Desktop/gh/networksProjects/Assignment 2/matrix/compressImage_38.npz', im_38)
+        savez_compressed('/Users/YuhangZhang/Desktop/gh/networksProjects/Assignment 2/matrix/compressImage_57.npz', im_57)
+        savez_compressed('/Users/YuhangZhang/Desktop/gh/networksProjects/Assignment 2/matrix/compressImage_76.npz', im_76)
+        savez_compressed('/Users/YuhangZhang/Desktop/gh/networksProjects/Assignment 2/matrix/compressImage_95.npz', im_95)
+
+        
+        # homedir = os.path.expanduser("~")
+        # cwd = os.getcwd()
+        # pathset = os.path.join(homedir, "Desktop/gh/networksProjects/Assignment 2/matrix")
+        
+        # output_19 = "compressedImage_19.npz"
+
+        # print("file is created1")
+
+        # if not(os.path.exists(pathset)):
+        #     os.makedirs(pathset, exist_ok=True)
+
+        #     ds = {"ORE_MAX_GIORNATA": 5}
+        #     # write the file in the new directory
+        #     np.save(os.path.join(pathset, output_19), ds)    
+
+
 
         im_i19 = twoD_IFFT(im_19).real 
         im_i38 = twoD_IFFT(im_38).real
@@ -216,25 +250,11 @@ def modeOutput(mode, address):
         im_i76 = twoD_IFFT(im_76).real
         im_i95 = twoD_IFFT(im_95).real
 
-        # out_original = np.count_nonzero(im_fft2)
-
-        # out_19 = np.count_nonzero(im_i19)
-        # out_38 = np.count_nonzero(im_i38)
-        # out_57 = np.count_nonzero(im_i57)
-        # out_76 = np.count_nonzero(im_i76)
-        # out_95 = np.count_nonzero(im_i95)
-        
-        # print("19%:", out_19/out_original)
-        # print("38%:", out_38/out_original)
-        # print("57%:", out_57/out_original)
-        # print("76%:", out_76/out_original)
-        # print("95%:", out_95/out_original)
-
-        print("19%:", np.count_nonzero(im_i19))
-        print("38%:", np.count_nonzero(im_i38))
-        print("57%:", np.count_nonzero(im_i57))
-        print("76%:", np.count_nonzero(im_i76))
-        print("95%:", np.count_nonzero(im_i95))
+        print("19%:", num_0_19)
+        print("38%:", num_0_38)
+        print("57%:", num_0_57)
+        print("76%:", num_0_76)
+        print("95%:", num_0_95)
 
 
         plt.figure("Mode_3")
