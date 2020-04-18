@@ -1,4 +1,4 @@
-# Projects on DNSNetworks & ImageProcessing(Fast Fourier transform)
+# DNSNetworks & ImageProcessing(FFT)
 
 ### Author: Yuhang Zhang and Charles Liu
 
