@@ -294,13 +294,13 @@ def modeOutput(mode, address):
         im_i76 = twoD_IFFT(im_76).real
         im_i95 = twoD_IFFT(im_95).real
 
-        print("Number of 0-coefficient-pixels")
+        print("Number of non-0-pixels")
 
-        print("at 19% Compression Level:", num_0_19)
-        print("at 38% Compression Level:", num_0_38)
-        print("at 57% Compression Level:", num_0_57)
-        print("at 76% Compression Level:", num_0_76)
-        print("at 95% Compression Level:", num_0_95)
+        print("at 19% Compression Level:", 524288 - num_0_19)
+        print("at 38% Compression Level:", 524288 - num_0_38)
+        print("at 57% Compression Level:", 524288 - num_0_57)
+        print("at 76% Compression Level:", 524288 - num_0_76)
+        print("at 95% Compression Level:", 524288 - num_0_95)
 
         print("---------------------------------")
 
