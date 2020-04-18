@@ -1,6 +1,9 @@
-# DNSNetworks & ImageProcessing(FFT)
+# DNSClient & ImageProcessing
 
 ### Author: Yuhang Zhang and Charles Liu
+
+### Assignment1: Java DNS Client using sockets with javaNetLibrary
+### Assignment2: Image Processing using Fourier Transform techniques
 
 ## Compile instruction for Assignemnt1(DNSNetworks):
 
