@@ -2,15 +2,12 @@
 
 ### Author: Yuhang Zhang and Charles Liu
 
-### Assignment1: Java DNS Client using sockets with javaNetLibrary
-### Assignment2: Image Processing using Fourier Transform techniques
+## Assignment1: Java DNS Client using sockets with javaNetLibrary
 
-## Compile instruction for Assignemnt1(DNSNetworks):
-
-### Argument Structure:
+### Compile Argument Structure:
 [-t timeout] [-r max-retries] [-p port] [-mx|-ns] @server name
 
-### Example:
+#### Example:
 java DnsClient -t 10 -r 5 -ns @8.8.8.8 mcgill.ca
 
 ### Notes:
@@ -21,9 +18,9 @@ java DnsClient -t 10 -r 5 -ns @8.8.8.8 mcgill.ca
 
 • JDK version 1.8 is recommended 
 
-## Compile instruction for Assignemnt2(ImageProcessing):
+## Assignment2: Image Processing using Fourier Transform techniques
 
-### Argument Structure:
+### Compile Argument Structure:
 python fft.py [-m mode] [-i image]
 
 [-m mode] : <br />
@@ -35,7 +32,7 @@ python fft.py [-m mode] [-i image]
 [-i image] : <br />
 filename of the image we wish to take the DFT of
 
-### Example:
+#### Example:
 python3 fft.py 3 moonlanding.png
 
 ### Notes:
