@@ -13,7 +13,7 @@ python fft.py [-m mode] [-i image]
 filename of the image we wish to take the DFT of
 
 ### Compile Argument Example:
-python3 fft.py 3 moonlanding.py
+python3 fft.py 3 moonlanding.png
 
 ### Compile Notes:
 • python 3.7 is recommanded <br />
