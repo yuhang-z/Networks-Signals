@@ -1,8 +1,8 @@
-# networksProject
+# Projects on DNSNetworks & ImageProcessing(Fast Fourier transform)
 
 ### Author: Yuhang Zhang and Charles Liu
 
-## Compile instruction for Assignemnt1:
+## Compile instruction for Assignemnt1(DNSNetworks):
 
 ### Argument Structure:
 [-t timeout] [-r max-retries] [-p port] [-mx|-ns] @server name
@@ -18,7 +18,7 @@ java DnsClient -t 10 -r 5 -ns @8.8.8.8 mcgill.ca
 
 • JDK version 1.8 is recommended 
 
-## Compile instruction for Assignemnt2:
+## Compile instruction for Assignemnt2(ImageProcessing):
 
 ### Argument Structure:
 python fft.py [-m mode] [-i image]
